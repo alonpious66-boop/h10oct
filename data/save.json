@@ -1,0 +1,74 @@
+{
+  "civilizationName": "Jemiah",
+  "speciesId": "aether",
+  "selectedPlanetId": "lynx-18",
+  "comparePlanetId": "ember-12",
+  "discoveredPlanetIds": [
+    "orion-1",
+    "aurelia-9",
+    "selene-7",
+    "thalassa-4",
+    "lynx-18",
+    "ember-12"
+  ],
+  "currentMission": "Launch Vortex-6 survey and orbital mapping sweep.",
+  "turn": 81,
+  "recentAlerts": [
+    "Launch Vortex-6 survey and orbital mapping sweep.",
+    "5 residents moved to orbital safe zones from Vortex-6.",
+    "Defense shelter online on Vortex-6. Residents are protected and sector threat is stable.",
+    "Defense scan: Extreme atmospheric storms, Root-driven sinkholes detected near Vortex-6.",
+    "Defense scan: Extreme atmospheric storms, Root-driven sinkholes detected near Vortex-6."
+  ],
+  "resources": {
+    "water": 0,
+    "minerals": 173,
+    "food": 0,
+    "energy": 7,
+    "silicon": 57,
+    "rare": 53,
+    "population": 26
+  },
+  "colonyStats": {
+    "population": 39,
+    "colonyHealth": 10,
+    "sustainability": 100,
+    "threat": "Elevated",
+    "habitats": 3,
+    "miningStations": 2,
+    "activeHabitats": 2,
+    "populationCapacity": 44
+  },
+  "buildings": [
+    "habitat",
+    "greenhouse",
+    "power",
+    "tower",
+    "oxygen",
+    "shelter"
+  ],
+  "tradeRoutes": [],
+  "eventLog": [
+    {
+      "label": "Turn 81",
+      "detail": "5 residents moved to orbital safe zones from Vortex-6."
+    },
+    {
+      "label": "Turn 81",
+      "detail": "Defense shelter online on Vortex-6. Residents are protected and sector threat is stable."
+    },
+    {
+      "label": "Turn 81",
+      "detail": "Defense scan: Extreme atmospheric storms, Root-driven sinkholes detected near Vortex-6."
+    },
+    {
+      "label": "Turn 81",
+      "detail": "Solar flare watch"
+    },
+    {
+      "label": "Turn 80",
+      "detail": "Rare mineral veins discovered"
+    }
+  ],
+  "systemMessage": "Mission launched for Vortex-6. Energy cost: 10."
+}

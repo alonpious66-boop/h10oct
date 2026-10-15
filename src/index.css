@@ -65,6 +65,12 @@ button {
   cursor: pointer;
 }
 
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+  filter: saturate(0.65);
+}
+
 .app-shell {
   position: relative;
   z-index: 1;
@@ -523,6 +529,30 @@ h1 {
   color: #9fb0ca;
 }
 
+.planet-card-description {
+  margin: 0 0 8px;
+  color: #b9c9df;
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+.planet-feature-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-bottom: 8px;
+}
+
+.planet-feature-tags span {
+  padding: 3px 6px;
+  border: 1px solid rgba(34, 211, 238, 0.2);
+  border-radius: 999px;
+  background: rgba(34, 211, 238, 0.06);
+  color: #8ee7f1;
+  font-size: 0.66rem;
+  line-height: 1.2;
+}
+
 .assessment-stack {
   display: flex;
   flex-direction: column;
@@ -681,7 +711,8 @@ select {
   margin-bottom: 14px;
 }
 
-.planet-search input {
+.planet-search input,
+.planet-search select {
   width: 100%;
   padding: 11px 13px;
   border: 1px solid rgba(96, 165, 250, 0.3);
@@ -692,9 +723,14 @@ select {
 }
 
 .planet-search input:focus,
+.planet-search select:focus,
 .compare-select select:focus {
   border-color: rgba(34, 211, 238, 0.72);
   box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.1);
+}
+
+.planet-feature-filter {
+  margin-top: -5px;
 }
 
 .planet-card[hidden] {
@@ -710,6 +746,24 @@ select {
   margin-bottom: 18px;
   color: #9fb0ca;
   font-size: 0.88rem;
+}
+
+.adaptation-guidance strong {
+  display: block;
+  margin-bottom: 7px;
+  color: #67e8f9;
+  font-size: 0.82rem;
+}
+
+.adaptation-guidance ul {
+  margin: 0;
+  padding-left: 18px;
+  color: #cbd5e1;
+  font-size: 0.8rem;
+}
+
+.adaptation-guidance li + li {
+  margin-top: 4px;
 }
 
 .compare-select-row,
@@ -1221,13 +1275,17 @@ select {
     linear-gradient(transparent 49.5%, rgba(45, 106, 125, 0.25) 50%, transparent 50.5%),
     repeating-radial-gradient(circle, transparent 0 24px, rgba(45, 106, 125, 0.23) 25px 26px),
     radial-gradient(circle, rgba(0, 96, 111, 0.16), rgba(4, 11, 22, 0.8));
+  isolation: isolate;
 }
 
 .radar-sweep {
   position: absolute;
   inset: 0;
+  z-index: 1;
   border-radius: 50%;
   background: conic-gradient(from 0deg, transparent 0deg 280deg, rgba(30, 228, 205, 0.32) 330deg, transparent 360deg);
+  animation: radar-sweep-rotation 6s linear infinite;
+  pointer-events: none;
 }
 
 .radar-center,
@@ -1240,6 +1298,7 @@ select {
 }
 
 .radar-center {
+  z-index: 3;
   display: grid;
   width: 15px;
   height: 15px;
@@ -1251,15 +1310,58 @@ select {
 }
 
 .radar-ping {
+  z-index: 2;
   width: 6px;
   height: 6px;
   background: #f5a623;
   box-shadow: 0 0 8px #f5a623;
 }
 
-.ping-one { top: 27%; left: 70%; }
-.ping-two { top: 67%; left: 72%; background: #fb7185; box-shadow: 0 0 8px #fb7185; }
-.ping-three { top: 38%; left: 28%; background: #a7f3d0; box-shadow: 0 0 8px #a7f3d0; }
+.ping-one {
+  --orbit-radius: 68px;
+  --orbit-start: -35deg;
+  animation: radar-contact-orbit 13s linear infinite, radar-contact-pulse 1.8s ease-in-out infinite;
+}
+
+.ping-two {
+  --orbit-radius: 43px;
+  --orbit-start: 125deg;
+  background: #fb7185;
+  box-shadow: 0 0 8px #fb7185;
+  animation: radar-contact-orbit 9s linear reverse infinite, radar-contact-pulse 1.4s ease-in-out infinite;
+}
+
+.ping-three {
+  --orbit-radius: 82px;
+  --orbit-start: 225deg;
+  background: #a7f3d0;
+  box-shadow: 0 0 8px #a7f3d0;
+  animation: radar-contact-orbit 17s linear infinite, radar-contact-pulse 2.2s ease-in-out infinite;
+}
+
+@keyframes radar-sweep-rotation {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes radar-contact-orbit {
+  from {
+    transform: translate(-50%, -50%) rotate(var(--orbit-start)) translateX(var(--orbit-radius));
+  }
+  to {
+    transform: translate(-50%, -50%) rotate(calc(var(--orbit-start) + 360deg)) translateX(var(--orbit-radius));
+  }
+}
+
+@keyframes radar-contact-pulse {
+  50% { opacity: 0.45; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .radar-sweep,
+  .radar-ping {
+    animation: none;
+  }
+}
 
 .mission-stack {
   gap: 6px;
@@ -1511,5 +1613,417 @@ select {
 
   .command-footer {
     flex-wrap: wrap;
+  }
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+.planet-layout {
+  grid-template-columns: minmax(0, 1.15fr) minmax(220px, 0.85fr);
+}
+
+.starchart-visual {
+  display: flex;
+  flex-direction: column;
+  min-height: 286px;
+  padding: 10px 12px 8px;
+  background:
+    linear-gradient(rgba(52, 96, 128, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(52, 96, 128, 0.08) 1px, transparent 1px),
+    radial-gradient(ellipse at center, rgba(14, 75, 94, 0.2), rgba(4, 10, 21, 0.96) 72%);
+  background-size: 24px 24px, 24px 24px, auto;
+}
+
+.starchart-visual::before {
+  background: radial-gradient(circle at center, rgba(15, 118, 110, 0.08), transparent 65%);
+  pointer-events: none;
+}
+
+.starchart-heading,
+.starchart-legend {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: #7592a9;
+  font-size: 7px;
+  letter-spacing: 0.1em;
+}
+
+.sector-map {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  min-height: 215px;
+  padding: 0;
+  overflow: visible;
+}
+
+.sector-map .star-route {
+  fill: none;
+  stroke: rgba(53, 208, 223, 0.52);
+  stroke-width: 1.4;
+  stroke-dasharray: 5 5;
+  vector-effect: non-scaling-stroke;
+}
+
+.sector-map .star-route.queued {
+  stroke: rgba(247, 183, 76, 0.78);
+  stroke-dasharray: 2 5;
+}
+
+.sector-map .star-node {
+  cursor: pointer;
+  outline: none;
+}
+
+.sector-map .star-node-halo {
+  fill: rgba(44, 208, 224, 0.08);
+  stroke: rgba(73, 206, 222, 0.13);
+  stroke-width: 1;
+  transition: r 160ms ease, fill 160ms ease;
+}
+
+.sector-map .star-node:hover .star-node-halo,
+.sector-map .star-node:focus .star-node-halo,
+.sector-map .star-node.selected .star-node-halo {
+  fill: rgba(44, 208, 224, 0.22);
+  stroke: rgba(100, 236, 247, 0.75);
+}
+
+.sector-map .route-node {
+  fill: #09111d;
+  stroke: #56e4e9;
+  stroke-width: 1.7;
+  transition: r 160ms ease;
+}
+
+.sector-map .route-home {
+  fill: #10cde5;
+  stroke: #a5f3fc;
+}
+
+.sector-map text {
+  fill: #b7c5d7;
+  font: 7px 'Segoe UI', sans-serif;
+  letter-spacing: 0.08em;
+  text-anchor: middle;
+  pointer-events: none;
+}
+
+.starchart-legend {
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  padding-top: 3px;
+}
+
+.starchart-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.legend-dot {
+  width: 6px;
+  height: 6px;
+  border: 1px solid #56e4e9;
+  border-radius: 50%;
+}
+
+.legend-dot.home {
+  background: #10cde5;
+}
+
+.legend-line {
+  width: 12px;
+  border-top: 1px dashed #35d0df;
+}
+
+.legend-line.queued {
+  border-color: #f7b74c;
+}
+
+.survey-description {
+  color: #b9c9df;
+  font-size: 9px;
+  line-height: 1.5;
+}
+
+.survey-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.survey-facts span {
+  padding: 3px 6px;
+  border: 1px solid rgba(83, 174, 204, 0.2);
+  background: rgba(12, 37, 55, 0.5);
+  color: #89bdcf;
+  font-size: 7px;
+  text-transform: uppercase;
+}
+
+.colony-panel {
+  min-width: 0;
+}
+
+.colony-grid-count {
+  color: #71d6c0;
+  font-size: 8px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.colony-site-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.colony-site {
+  position: relative;
+  display: flex;
+  min-height: 94px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 8px;
+  border: 1px solid rgba(116, 139, 171, 0.2);
+  background: linear-gradient(145deg, rgba(12, 25, 41, 0.94), rgba(8, 13, 25, 0.94));
+}
+
+.colony-site.built {
+  border-color: rgba(48, 208, 165, 0.4);
+  background: linear-gradient(145deg, rgba(14, 48, 48, 0.72), rgba(8, 20, 29, 0.95));
+}
+
+.site-coordinate {
+  position: absolute;
+  top: 5px;
+  right: 6px;
+  color: #687d95;
+  font-size: 7px;
+  letter-spacing: 0.1em;
+}
+
+.site-symbol {
+  color: #63758e;
+  font-size: 12px;
+  line-height: 1;
+}
+
+.colony-site.built .site-symbol,
+.colony-site.built small {
+  color: #6ce0bc;
+}
+
+.colony-site strong {
+  color: #c9d7e9;
+  font-size: 8px;
+  line-height: 1.25;
+}
+
+.colony-site small {
+  color: #8291a6;
+  font-size: 6px;
+  letter-spacing: 0.06em;
+}
+
+.colony-site button {
+  margin-top: auto;
+  padding: 3px 6px;
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  background: rgba(14, 116, 144, 0.22);
+  color: #99e6f4;
+  font-size: 7px;
+}
+
+.colony-grid-caption {
+  margin-top: 7px;
+  color: #788ba5;
+  font-size: 7px;
+}
+
+.construction-details {
+  margin-top: 9px;
+  color: #87ddea;
+  font-size: 8px;
+}
+
+.construction-details summary {
+  cursor: pointer;
+}
+
+.construction-details .construction-grid {
+  margin-top: 8px;
+}
+
+.trade-defense-panel {
+  min-width: 0;
+  grid-column: 1 / -1;
+}
+
+.matrix-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #69dcb8;
+  font-size: 7px;
+  letter-spacing: 0.12em;
+}
+
+.matrix-live .online-dot {
+  width: 6px;
+  height: 6px;
+}
+
+.matrix-readouts {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 5px;
+  margin-bottom: 8px;
+}
+
+.matrix-readouts > div {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 3px;
+  padding: 6px;
+  border: 1px solid rgba(104, 129, 160, 0.17);
+  background: rgba(7, 15, 27, 0.75);
+}
+
+.matrix-readouts span {
+  color: #73849c;
+  font-size: 6px;
+  letter-spacing: 0.08em;
+}
+
+.matrix-readouts strong {
+  color: #c2d6e8;
+  font-size: 9px;
+}
+
+.matrix-readouts .threat-value {
+  color: #f3bb66;
+}
+
+.trade-defense-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(150px, 0.85fr);
+  gap: 10px;
+}
+
+.defense-matrix-card {
+  padding: 8px;
+  border: 1px solid rgba(248, 113, 113, 0.18);
+  background: linear-gradient(145deg, rgba(45, 20, 31, 0.45), rgba(8, 14, 27, 0.88));
+}
+
+.defense-matrix-heading,
+.defense-threat-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  font-size: 7px;
+}
+
+.defense-matrix-heading span {
+  color: #8b91a6;
+  letter-spacing: 0.09em;
+}
+
+.defense-matrix-heading strong {
+  color: #d5e1ef;
+  font-size: 8px;
+}
+
+.defense-threat-line {
+  justify-content: flex-start;
+  margin-top: 8px;
+  color: #f5a7aa;
+}
+
+.threat-indicator {
+  width: 6px;
+  height: 6px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: #fb7185;
+  box-shadow: 0 0 9px rgba(251, 113, 133, 0.8);
+}
+
+.defense-matrix-stats {
+  display: grid;
+  gap: 5px;
+  margin-top: 8px;
+}
+
+.defense-matrix-stats span {
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+  color: #8090a6;
+  font-size: 7px;
+}
+
+.defense-matrix-stats strong {
+  color: #cad7e6;
+  font-size: 7px;
+  text-align: right;
+}
+
+.defense-matrix-actions {
+  display: flex;
+  gap: 5px;
+  margin-top: 8px;
+}
+
+.defense-matrix-actions button {
+  width: auto;
+  font-size: 7px;
+}
+
+@media (max-width: 900px) {
+  .planet-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .trade-defense-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .colony-site-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 600px) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .starchart-heading,
+  .starchart-legend {
+    font-size: 6px;
+  }
+
+  .colony-site-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .matrix-readouts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .trade-defense-layout {
+    overflow-x: auto;
   }
 }
