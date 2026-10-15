@@ -6,7 +6,7 @@
 
 ## Galactic Civilization Builder: manage planets, resources, and colonies from a space-themed dashboard.
 
-### Team Name: [Your Team Name]
+### Team Name: Jemiah
 
 ### Team Members
 - Member 1: Alon pious - VAST
