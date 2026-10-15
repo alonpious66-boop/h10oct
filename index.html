@@ -1,0 +1,672 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AFTERNET — Galactic Civilization Builder</title>
+    <meta name="description" content="AFTERNET — Galactic Civilization Builder" />
+    <link rel="stylesheet" href="./src/index.css" />
+  </head>
+  <body>
+    <div id="root"></div>
+
+    <script>
+      const STORAGE_KEY = 'afternet-save-v1';
+      const planetCatalog = [
+        { id: 'aurelia-9', name: 'Aurelia-9', type: 'Oceanic', temperature: 18, gravity: 1.04, atmosphere: 'N₂ / O₂ / Ar', water: 82, minerals: 71, energy: 58, radiation: 17, hazards: ['Acid storms', 'North polar ice quakes'], status: 'Scouted', compatibility: 88, route: 'Asterion corridor' },
+        { id: 'selene-7', name: 'Selene-7', type: 'Cryo', temperature: -11, gravity: 0.78, atmosphere: 'N₂ / He / CO₂', water: 68, minerals: 80, energy: 31, radiation: 22, hazards: ['Cryovolcanic vents', 'Low-light storms'], status: 'Active outpost', compatibility: 64, route: 'Luna lane' },
+        { id: 'vexor-3', name: 'Vexor-3', type: 'Volcanic', temperature: 34, gravity: 1.28, atmosphere: 'CO₂ / SO₂ / N₂', water: 19, minerals: 91, energy: 75, radiation: 54, hazards: ['Ash plumes', 'Seismic surges'], status: 'Unmapped', compatibility: 42, route: 'Ash spine' },
+        { id: 'thalassa-4', name: 'Thalassa-4', type: 'Tidal', temperature: 23, gravity: 0.92, atmosphere: 'N₂ / O₂ / H₂O vapour', water: 90, minerals: 53, energy: 48, radiation: 13, hazards: ['High-pressure tides', 'Flash floods'], status: 'Scouted', compatibility: 79, route: 'Silver current' },
+        { id: 'ember-12', name: 'Ember-12', type: 'Desert', temperature: 41, gravity: 1.11, atmosphere: 'CO₂ / Ar', water: 12, minerals: 74, energy: 88, radiation: 52, hazards: ['Dust cyclones', 'Solar bursts'], status: 'Surveyed', compatibility: 47, route: 'Solar flare lane' },
+        { id: 'lynx-18', name: 'Lynx-18', type: 'Forest', temperature: 15, gravity: 1.12, atmosphere: 'N₂ / O₂ / CH₄', water: 76, minerals: 60, energy: 63, radiation: 16, hazards: ['Dense biohazard haze', 'Root-driven sinkholes'], status: 'Scouted', compatibility: 83, route: 'Verdant arc' },
+        { id: 'orion-1', name: 'Orion-1', type: 'Terrestrial', temperature: 21, gravity: 1.0, atmosphere: 'N₂ / O₂ / Ar', water: 77, minerals: 58, energy: 61, radiation: 12, hazards: ['Seasonal dust storms'], status: 'Homeworld', compatibility: 92, route: 'Founding ring' }
+      ];
+
+      const speciesCatalog = [
+        { id: 'human', name: 'Terran Baseline', description: 'Adaptable and resilient; requires standard atmosphere and moderate gravity.', requirements: { atmosphere: 85, temperature: 65, gravity: 76, water: 70, food: 78, energy: 60, radiation: 72, shelter: 80 } },
+        { id: 'nautil', name: 'Nautiloid', description: 'Amphibious and subterranean; thrives in high water availability and shaded, cold terrain.', requirements: { atmosphere: 68, temperature: 52, gravity: 62, water: 92, food: 66, energy: 55, radiation: 80, shelter: 86 } },
+        { id: 'aether', name: 'Aether Bloom', description: 'Photosynthetic lattice-form creatures favor high-light, low-radiation worlds with elevated oxygen.', requirements: { atmosphere: 90, temperature: 72, gravity: 70, water: 68, food: 90, energy: 82, radiation: 88, shelter: 72 } }
+      ];
+
+      const buildingCatalog = [
+        { id: 'habitat', name: 'Residential Habitat', cost: { minerals: 25, water: 8, energy: 14 }, effect: { population: 14, health: 6 } },
+        { id: 'medical', name: 'Medical Center', cost: { minerals: 18, energy: 10, water: 6 }, effect: { health: 12 } },
+        { id: 'greenhouse', name: 'Greenhouse', cost: { minerals: 22, water: 7, energy: 11 }, effect: { food: 18 } },
+        { id: 'water-plant', name: 'Water Purification', cost: { minerals: 20, energy: 7, water: 4 }, effect: { water: 18 } },
+        { id: 'oxygen', name: 'Oxygen Generator', cost: { minerals: 16, energy: 12 }, effect: { health: 8 } },
+        { id: 'power', name: 'Solar Power Station', cost: { minerals: 26, water: 6, energy: 9 }, effect: { energy: 24 } },
+        { id: 'mine', name: 'Mining Facility', cost: { minerals: 28, energy: 12 }, effect: { minerals: 20 } },
+        { id: 'lab', name: 'Research Lab', cost: { minerals: 20, energy: 18 }, effect: { sustainability: 8 } },
+        { id: 'tower', name: 'Comm Tower', cost: { minerals: 14, energy: 8 }, effect: { trade: 10 } },
+        { id: 'shelter', name: 'Defense Shelter', cost: { minerals: 30, energy: 15, water: 8 }, effect: { health: 10, safety: 12 } }
+      ];
+
+      const defaultState = {
+        civilizationName: 'Jemiah',
+        speciesId: 'human',
+        selectedPlanetId: 'orion-1',
+        comparePlanetId: 'aurelia-9',
+        currentMission: 'Habitat survey and landing prep',
+        turn: 1,
+        recentAlerts: ['High orbit relay restored for the southern wing.', 'Mineral haul queued for the Helios ridge.', 'Water reserve above sustainability threshold.'],
+        resources: { water: 86, minerals: 72, food: 78, energy: 68, silicon: 42, rare: 23, population: 26 },
+        colonyStats: { population: 26, colonyHealth: 79, sustainability: 82, threat: 'Elevated', habitats: 3, miningStations: 2, activeHabitats: 2, populationCapacity: 44 },
+        buildings: ['habitat', 'greenhouse', 'power'],
+        tradeRoutes: [{ from: 'Orion-1', to: 'Aurelia-9', cost: 12, days: 3, status: 'Available' }, { from: 'Orion-1', to: 'Thalassa-4', cost: 18, days: 4, status: 'Available' }, { from: 'Aurelia-9', to: 'Lynx-18', cost: 14, days: 3, status: 'Queued' }],
+        eventLog: [{ label: 'Turn 1', detail: 'Long-range scans identified a stable geothermal pocket on Selene-7.' }, { label: 'Turn 2', detail: 'Settlement nutrient loop is achieving 94% efficiency.' }],
+        systemMessage: 'All systems stable. Planetary adaptation model ready for deployment.'
+      };
+
+      const clamp = (value, min = 0, max = 100) => Math.min(Math.max(value, min), max);
+
+      function loadState() {
+        try {
+          const saved = localStorage.getItem(STORAGE_KEY);
+          if (!saved) return defaultState;
+          const restored = JSON.parse(saved);
+          return {
+            ...restored,
+            civilizationName: restored.civilizationName === 'Astra Nova' ? 'Jemiah' : restored.civilizationName,
+            comparePlanetId: restored.comparePlanetId || 'aurelia-9'
+          };
+        } catch (error) {
+          return defaultState;
+        }
+      }
+
+      let state = loadState();
+      const root = document.getElementById('root');
+
+      function getSelectedPlanet() {
+        return planetCatalog.find((planet) => planet.id === state.selectedPlanetId) || planetCatalog[0];
+      }
+
+      function getComparePlanet() {
+        return planetCatalog.find((planet) => planet.id === state.comparePlanetId) || planetCatalog[0];
+      }
+
+      function getSelectedSpecies() {
+        return speciesCatalog.find((species) => species.id === state.speciesId) || speciesCatalog[0];
+      }
+
+      function calculateCompatibility(planet, species) {
+        const atmosphereScore = clamp(100 - Math.abs((planet.atmosphere.includes('O₂') ? 84 : 46) - species.requirements.atmosphere));
+        const tempScore = clamp(100 - Math.abs(planet.temperature - 21) * 2.5);
+        const gravityScore = clamp(100 - Math.abs((planet.gravity * 100) - 100) * 1.6);
+        const waterScore = clamp(Math.min(100, planet.water + 20 - Math.max(0, species.requirements.water - 60)));
+        const foodScore = clamp(planet.water * 0.75 + planet.energy * 0.4);
+        const energyScore = clamp(planet.energy + (planet.type === 'Desert' ? 18 : 0));
+        const safetyScore = clamp(100 - planet.radiation * 1.2 - planet.hazards.length * 6);
+        return Math.round(atmosphereScore * 0.22 + tempScore * 0.18 + gravityScore * 0.12 + waterScore * 0.16 + foodScore * 0.12 + energyScore * 0.1 + safetyScore * 0.1);
+      }
+
+      function buildCompatibilityData(planet, species) {
+        return [
+          { name: 'Atmosphere', value: clamp(100 - Math.abs((planet.atmosphere.includes('O₂') ? 84 : 46) - species.requirements.atmosphere)) },
+          { name: 'Temperature', value: clamp(100 - Math.abs(planet.temperature - 21) * 2.5) },
+          { name: 'Gravity', value: clamp(100 - Math.abs((planet.gravity * 100) - 100) * 1.6) },
+          { name: 'Water', value: clamp(Math.min(100, planet.water + 20 - Math.max(0, species.requirements.water - 60))) },
+          { name: 'Food', value: clamp(planet.water * 0.75 + planet.energy * 0.4) },
+          { name: 'Energy', value: clamp(planet.energy + (planet.type === 'Desert' ? 18 : 0)) },
+          { name: 'Safety', value: clamp(100 - planet.radiation * 1.2 - planet.hazards.length * 6) }
+        ];
+      }
+
+      function getRecommendation(score) {
+        if (score >= 75) return 'Suitable';
+        if (score >= 55) return 'Suitable with Infrastructure';
+        return 'Unsuitable';
+      }
+
+      function getStatusClass(status) {
+        if (status === 'Suitable') return 'status-good';
+        if (status === 'Suitable with Infrastructure') return 'status-warn';
+        return 'status-danger';
+      }
+
+      function saveState() {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      }
+
+      function render() {
+        const selectedPlanet = getSelectedPlanet();
+        const selectedSpecies = getSelectedSpecies();
+        const compatibilityScore = calculateCompatibility(selectedPlanet, selectedSpecies);
+        const comparePlanet = getComparePlanet();
+        const compareCompatibility = calculateCompatibility(comparePlanet, selectedSpecies);
+        const recommendation = getRecommendation(compatibilityScore);
+        const compatibilityData = buildCompatibilityData(selectedPlanet, selectedSpecies);
+        const compareFactors = buildCompatibilityData(comparePlanet, selectedSpecies);
+
+        root.innerHTML = `
+          <div class="app-shell">
+            <div class="page-wrap">
+              <header class="topbar glass-panel">
+                <div class="brand-wrap">
+                  <div class="brand-mark">◆</div>
+                  <div>
+                    <p class="eyebrow">${state.civilizationName} // Galactic</p>
+                    <h1>Command</h1>
+                  </div>
+                </div>
+                <div class="status-strip">
+                  <div class="telemetry-cell"><span>Cycle</span><strong>${state.turn}</strong></div>
+                  <div class="telemetry-cell"><span>Tier III</span><strong>Interstellar</strong></div>
+                  <div class="telemetry-cell"><span>Energy</span><strong>${state.resources.energy} <small>GW</small></strong></div>
+                  <div class="telemetry-cell"><span>Population</span><strong>${state.colonyStats.population}</strong></div>
+                  <div class="telemetry-cell threat-readout"><span>Threat</span><strong>${state.colonyStats.threat}</strong></div>
+                </div>
+              </header>
+
+              <nav class="command-nav">
+                <a href="#planet-explorer">Sector starchart</a>
+                <a href="#planet-overview">Planetary survey</a>
+                <a href="#colony-grid">Colony grid</a>
+                <a class="nav-active" href="#trade-matrix">Trade &amp; defense matrix</a>
+              </nav>
+
+              <div class="defense-banner glass-panel">
+                <div>
+                  <strong><span class="online-dot"></span> Defense / logistics matrix synced</strong>
+                  <small>Active freight corridors: ${state.tradeRoutes.length} secure / ${state.tradeRoutes.filter((route) => route.status === 'Queued').length} queued</small>
+                </div>
+                <div class="banner-actions">
+                  <button class="secondary-btn" data-action="calibrate">Calibrate telemetry</button>
+                  <button class="danger-btn" data-action="emergency">Emergency protocol · advance 5</button>
+                </div>
+              </div>
+
+              <div class="main-grid">
+                <aside class="sidebar">
+                  <div class="glass-panel panel-block">
+                    <div class="panel-header">
+                      <h2>System</h2>
+                      <span class="online-dot"></span>
+                    </div>
+                    <ul class="system-list">
+                      <li><span>🛰️ Explore</span><span>${selectedPlanet.name}</span></li>
+                      <li><span>⛏️ Mining</span><span>${state.colonyStats.miningStations} stations</span></li>
+                      <li><span>🏙️ Habitats</span><span>${state.colonyStats.activeHabitats} active</span></li>
+                      <li><span>📦 Trade</span><span>${state.tradeRoutes.length} routes</span></li>
+                      <li><span>🛡️ Defense</span><span>Orbit shield online</span></li>
+                    </ul>
+                  </div>
+
+                  <div class="glass-panel panel-block">
+                    <h3>Recent alerts</h3>
+                    <div class="alert-list">
+                      ${state.recentAlerts.map((alert) => `<div class="alert-card">${alert}</div>`).join('')}
+                    </div>
+                  </div>
+                </aside>
+
+                <main class="content">
+                  <div class="stats-grid">
+                    ${['Water', 'Minerals', 'Food', 'Energy'].map((label) => {
+                      const map = { Water: 'water', Minerals: 'minerals', Food: 'food', Energy: 'energy' };
+                      const key = map[label];
+                      const accent = { Water: 'cyan', Minerals: 'blue', Food: 'emerald', Energy: 'violet' }[label];
+                      const value = state.resources[key];
+                      return `
+                        <div class="glass-panel stat-card">
+                          <div class="stat-head"><span>${label}</span><span class="dot dot-${accent}"></span></div>
+                          <div class="stat-value">${value}</div>
+                          <div class="progress-bar"><div class="fill fill-${accent}" style="width: ${Math.min(100, value)}%"></div></div>
+                        </div>
+                      `;
+                    }).join('')}
+                  </div>
+
+                  <div class="hero-grid">
+                    <div class="glass-panel panel-large" id="planet-overview">
+                      <div class="panel-topline">
+                        <div>
+                          <p class="eyebrow">Tactical hyperlane route topology</p>
+                          <h2>${selectedPlanet.name}</h2>
+                        </div>
+                        <div class="status-pill ${getStatusClass(recommendation)}">${recommendation}</div>
+                      </div>
+
+                      <div class="planet-layout">
+                        <div class="planet-visual">
+                          <svg class="route-map" viewBox="0 0 620 260" role="img" aria-label="Orbital route map">
+                            <path d="M65 155 C150 90 190 55 286 68 S430 135 548 196"></path>
+                            <path class="route-secondary" d="M65 155 C170 218 240 222 325 190 S450 95 548 196"></path>
+                            <path class="route-alert" d="M286 68 C375 88 438 142 548 196"></path>
+                            ${[['65','155','ORION'],['175','94','LYNX'],['286','68','AURELIA'],['325','190','SELENE'],['548','196','THALASSA']].map(([x,y,name]) => `<g><circle cx="${x}" cy="${y}" r="7" class="${name === 'ORION' ? 'route-node route-home' : 'route-node'}"></circle><text x="${x}" y="${Number(y) + 23}">${name}</text></g>`).join('')}
+                          </svg>
+                          <div class="planet-badge">${selectedPlanet.status} · ${selectedPlanet.route}</div>
+                        </div>
+
+                        <div class="planet-meta">
+                          <div class="mini-grid">
+                            <div class="mini-box"><span>Temperature</span><strong>${selectedPlanet.temperature}°C</strong></div>
+                            <div class="mini-box"><span>Gravity</span><strong>${selectedPlanet.gravity}g</strong></div>
+                            <div class="mini-box"><span>Water</span><strong>${selectedPlanet.water}%</strong></div>
+                            <div class="mini-box"><span>Energy</span><strong>${selectedPlanet.energy}%</strong></div>
+                            <div class="mini-box"><span>Minerals</span><strong>${selectedPlanet.minerals}%</strong></div>
+                            <div class="mini-box"><span>Radiation</span><strong>${selectedPlanet.radiation}%</strong></div>
+                          </div>
+                          <div class="compat-box">
+                            <div class="compat-header"><span>Compatibility score</span><strong>${compatibilityScore}/100</strong></div>
+                            <div class="progress-bar"><div class="fill fill-cyan" style="width:${compatibilityScore}%"></div></div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="glass-panel panel-stack radar-panel">
+                      <div class="panel-header tight">
+                        <p class="eyebrow">Tactical defense / sentry grid</p>
+                        <h3>Orbital threat detection</h3>
+                      </div>
+                      <div class="radar-display"><span class="radar-sweep"></span><span class="radar-ping ping-one"></span><span class="radar-ping ping-two"></span><span class="radar-ping ping-three"></span><span class="radar-center">◆</span></div>
+                      <div class="mission-stack">
+                        <div class="mission-card alert-card-critical">${selectedPlanet.hazards[0]} · ${state.colonyStats.threat} threat</div>
+                        <div class="mission-card">${state.currentMission}</div>
+                        <button class="primary-btn" data-action="explore">Launch exploration</button>
+                        <button class="secondary-btn" data-action="mine">Deploy mining sweep</button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="two-col planet-systems">
+                    <div class="glass-panel panel-block comparison-panel">
+                      <div class="panel-header tight">
+                        <p class="eyebrow">Planet explorer</p>
+                        <h3>Discovered systems</h3>
+                      </div>
+                      <label class="planet-search">
+                        <span>Search planets</span>
+                        <input id="planetSearch" type="search" placeholder="Name, type, or status..." />
+                      </label>
+                      <div class="planet-grid">
+                        ${planetCatalog.map((planet) => `
+                          <button class="planet-card ${state.selectedPlanetId === planet.id ? 'active' : ''}" data-planet="${planet.id}" data-search="${`${planet.name} ${planet.type} ${planet.status}`.toLowerCase()}">
+                            <div class="planet-card-top"><span>${planet.name}</span><small>${planet.type}</small></div>
+                            <small>${planet.status}</small>
+                            <div class="progress-bar tiny"><div class="fill fill-cyan" style="width:${calculateCompatibility(planet, selectedSpecies)}%"></div></div>
+                          </button>
+                        `).join('')}
+                      </div>
+                    </div>
+
+                    <div class="glass-panel panel-block comparison-panel">
+                      <p class="eyebrow">World analysis</p>
+                      <h3 class="section-title">Planet adaptability comparison</h3>
+                      <p class="comparison-caption">Compare habitability for the selected ${selectedSpecies.name} profile.</p>
+                      <div class="compare-select-row">
+                        <div class="compare-planet-name"><span>Current planet</span><strong>${selectedPlanet.name}</strong></div>
+                        <label class="compare-select">
+                          <span>Compare with</span>
+                          <select id="comparePlanetSelect">
+                            ${planetCatalog.map((planet) => `<option value="${planet.id}" ${state.comparePlanetId === planet.id ? 'selected' : ''}>${planet.name}</option>`).join('')}
+                          </select>
+                        </label>
+                      </div>
+                      <div class="comparison-score-grid">
+                        ${[{ planet: selectedPlanet, score: compatibilityScore }, { planet: comparePlanet, score: compareCompatibility }].map(({ planet, score }) => `
+                          <div class="comparison-score">
+                            <div class="comparison-score-head"><strong>${planet.name}</strong><span>${getRecommendation(score)}</span></div>
+                            <div class="progress-bar"><div class="fill fill-cyan" style="width:${score}%"></div></div>
+                            <strong class="comparison-number">${score}<small>/100 adaptability</small></strong>
+                          </div>
+                        `).join('')}
+                      </div>
+                      <div class="comparison-factors">
+                        ${compatibilityData.map((factor, index) => `
+                          <div class="comparison-factor">
+                            <span>${factor.name}</span><strong>${Math.round(factor.value)}</strong>
+                            <div class="progress-bar tiny"><div class="fill fill-blue" style="width:${factor.value}%"></div></div>
+                            <strong>${Math.round(compareFactors[index].value)}</strong>
+                          </div>
+                        `).join('')}
+                      </div>
+                      <div class="comparison-resources">
+                        <span>Resources</span>
+                        <span>${selectedPlanet.water}% water · ${selectedPlanet.minerals}% minerals · ${selectedPlanet.energy}% energy</span>
+                        <span>${comparePlanet.water}% water · ${comparePlanet.minerals}% minerals · ${comparePlanet.energy}% energy</span>
+                      </div>
+                    </div>
+
+                    <div class="glass-panel panel-block">
+                      <p class="eyebrow">Habitation assessment</p>
+                      <div class="assessment-stack">
+                        <div class="assessment-box">
+                          <div class="select-row">
+                            <span>Civilization profile</span>
+                            <select id="speciesSelect">
+                              ${speciesCatalog.map((species) => `<option value="${species.id}" ${state.speciesId === species.id ? 'selected' : ''}>${species.name}</option>`).join('')}
+                            </select>
+                          </div>
+                          <p>${selectedSpecies.description}</p>
+                        </div>
+
+                        <div class="assessment-box">
+                          <div class="compat-header"><span>Compatibility factors</span><strong>${compatibilityScore}/100</strong></div>
+                          <div class="factor-list">
+                            ${compatibilityData.map((factor) => `
+                              <div class="factor-item">
+                                <div class="factor-row"><span>${factor.name}</span><span>${Math.round(factor.value)}</span></div>
+                                <div class="progress-bar tiny"><div class="fill fill-blue" style="width:${factor.value}%"></div></div>
+                              </div>
+                            `).join('')}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="two-col compact resource-logistics">
+                    <div class="glass-panel panel-block">
+                      <div class="panel-header tight">
+                        <p class="eyebrow">Resource mining</p>
+                        <h3>Extraction matrix</h3>
+                      </div>
+                      <div class="turn-controls">
+                        <button class="advance-btn" data-action="advance-turn">Advance turn</button>
+                        <button class="fast-forward-btn" data-action="advance-five">Advance 5 turns</button>
+                      </div>
+                      <div class="resource-grid">
+                        ${[
+                          { key: 'water', label: 'Water Ice', gain: '+16', cost: 8 },
+                          { key: 'minerals', label: 'Minerals', gain: '+18', cost: 10 },
+                          { key: 'silicon', label: 'Silicon', gain: '+15', cost: 12 },
+                          { key: 'rare', label: 'Rare Ore', gain: '+10', cost: 16 }
+                        ].map((item) => `
+                          <button class="resource-card" data-mine="${item.key}">
+                            <div class="resource-head"><span>${item.label}</span><small>${item.gain}</small></div>
+                            <small>Energy cost: ${item.cost}</small>
+                          </button>
+                        `).join('')}
+                      </div>
+                    </div>
+
+                    <div class="glass-panel panel-block cargo-panel" id="trade-matrix">
+                      <p class="eyebrow">Active cargo freighter manifest</p>
+                      <div class="route-list">
+                        <div class="cargo-table-head"><span>Route ID</span><span>Freight</span><span>ETA</span><span>Threat</span></div>
+                        ${state.tradeRoutes.map((route, idx) => `
+                          <div class="cargo-row">
+                            <span>${route.from} → ${route.to}</span><span>${route.cost} units · ${route.status}</span>
+                            <span>${route.days} days</span><span class="${route.status === 'Queued' ? 'cargo-status-warn' : 'cargo-status-safe'}">${route.status === 'Queued' ? 'MONITOR' : 'SECURE'}</span>
+                          </div>
+                        `).join('')}
+                        <button class="primary-btn" data-action="dispatch">Dispatch cargo</button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="two-col compact colony-grid-row">
+                    <div class="glass-panel panel-block">
+                      <div class="panel-header tight">
+                        <p class="eyebrow">Colony construction</p>
+                        <h3>Buildable structures</h3>
+                      </div>
+                      <div class="construction-grid">
+                        ${buildingCatalog.map((structure) => `
+                          <div class="structure-card">
+                            <div class="structure-head"><span>${structure.name}</span><button data-build="${structure.id}">Build</button></div>
+                            <small>Cost: ${Object.entries(structure.cost).map(([key, value]) => `${key} ${value}`).join(' · ')}</small>
+                          </div>
+                        `).join('')}
+                      </div>
+                    </div>
+
+                    <div class="glass-panel panel-block">
+                      <p class="eyebrow">Colony health</p>
+                      <div class="health-stack">
+                        <div class="bar-group">
+                          <div class="bar-label"><span>Population</span><strong>${state.colonyStats.population}/${state.colonyStats.populationCapacity}</strong></div>
+                          <div class="progress-bar"><div class="fill fill-emerald" style="width:${(state.colonyStats.population / state.colonyStats.populationCapacity) * 100}%"></div></div>
+                        </div>
+                        <div class="bar-group">
+                          <div class="bar-label"><span>Health</span><strong>${state.colonyStats.colonyHealth}%</strong></div>
+                          <div class="progress-bar"><div class="fill fill-amber" style="width:${state.colonyStats.colonyHealth}%"></div></div>
+                        </div>
+                        <div class="bar-group">
+                          <div class="bar-label"><span>Sustainability</span><strong>${state.colonyStats.sustainability}%</strong></div>
+                          <div class="progress-bar"><div class="fill fill-violet" style="width:${state.colonyStats.sustainability}%"></div></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="chart-grid">
+                    <div class="glass-panel panel-block chart-panel">
+                      <p class="eyebrow">Resource balance</p>
+                      <svg viewBox="0 0 360 200" class="chart-svg">
+                        ${(() => {
+                          const values = ['water', 'minerals', 'food', 'energy', 'silicon', 'rare'].map((key) => state.resources[key]);
+                          const max = Math.max(...values, 1);
+                          return values.map((value, idx) => {
+                            const barHeight = (value / max) * 140;
+                            const x = 30 + idx * 52;
+                            const y = 170 - barHeight;
+                            return `<g><rect x="${x}" y="${y}" width="40" height="${barHeight}" rx="8" fill="#67e8f9" opacity="0.9"></rect><text x="${x + 20}" y="190" text-anchor="middle" fill="#cbd5e1" font-size="10">${['water', 'minerals', 'food', 'energy', 'silicon', 'rare'][idx].slice(0, 4)}</text></g>`;
+                          }).join('');
+                        })()}
+                      </svg>
+                    </div>
+
+                    <div class="glass-panel panel-block chart-panel">
+                      <p class="eyebrow">Colony pulse</p>
+                      <svg viewBox="0 0 360 200" class="chart-svg">
+                        ${(() => {
+                          const tradeValues = [state.resources.water, state.resources.minerals, state.resources.food, state.resources.energy];
+                          const max = Math.max(...tradeValues, 1);
+                          const points = tradeValues.map((value, idx) => {
+                            const x = 30 + (idx * 260) / (tradeValues.length - 1 || 1);
+                            const y = 170 - (value / max) * 120;
+                            return `${x},${y}`;
+                          }).join(' ');
+                          return `<defs><linearGradient id="pulseGradient" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stop-color="#a78bfa" stop-opacity="0.8"></stop><stop offset="100%" stop-color="#a78bfa" stop-opacity="0.08"></stop></linearGradient></defs><polyline points="${points}" fill="none" stroke="#a78bfa" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"></polyline><polygon points="30,170 ${points} 330,170" fill="url(#pulseGradient)" opacity="0.8"></polygon>`;
+                        })()}
+                      </svg>
+                    </div>
+                  </div>
+
+                  <div class="bottom-grid">
+                    <div class="glass-panel panel-block">
+                      <p class="eyebrow">System message</p>
+                      <div class="system-banner">${state.systemMessage}</div>
+                    </div>
+
+                    <div class="glass-panel panel-block">
+                      <p class="eyebrow">Event log</p>
+                      <div class="event-list">
+                        ${state.eventLog.map((event) => `
+                          <div class="event-item">
+                            <span>${event.label}</span>
+                            <p>${event.detail}</p>
+                          </div>
+                        `).join('')}
+                      </div>
+                    </div>
+                  </div>
+                </main>
+              </div>
+              <footer class="command-footer">
+                <span>Galactic civilization matrix // system core v3.4</span>
+                <span><i class="online-dot"></i> Telemetry link synchronized</span>
+                <span>Encryption quantum polarized</span>
+              </footer>
+            </div>
+          </div>
+        `;
+
+        const speciesSelect = document.getElementById('speciesSelect');
+        if (speciesSelect) {
+          speciesSelect.onchange = (event) => {
+            state.speciesId = event.target.value;
+            saveState();
+            render();
+          };
+        }
+        const compareSelect = document.getElementById('comparePlanetSelect');
+        if (compareSelect) {
+          compareSelect.onchange = (event) => {
+            state.comparePlanetId = event.target.value;
+            saveState();
+            render();
+          };
+        }
+        const planetSearch = document.getElementById('planetSearch');
+        if (planetSearch) {
+          planetSearch.oninput = (event) => {
+            const query = event.target.value.trim().toLowerCase();
+            document.querySelectorAll('[data-planet]').forEach((planet) => {
+              planet.hidden = !planet.getAttribute('data-search').includes(query);
+            });
+          };
+        }
+      }
+
+      function startMission(type) {
+        const planet = getSelectedPlanet();
+        const missionText = type === 'explore' ? `Launch ${planet.name} survey and orbital mapping sweep.` : `Deploy mining corridor to ${planet.name}.`;
+        state.currentMission = missionText;
+        state.recentAlerts = [missionText, ...state.recentAlerts].slice(0, 4);
+        state.systemMessage = `Mission launched for ${planet.name}. Resource telemetry is now streaming to the command deck.`;
+        saveState();
+        render();
+      }
+
+      function mineResource(resourceKey) {
+        const cost = resourceKey === 'minerals' ? 10 : resourceKey === 'silicon' ? 12 : resourceKey === 'rare' ? 16 : 8;
+        if (state.resources.energy < cost) {
+          state.systemMessage = `Extraction blocked: ${cost} energy required to mine ${resourceKey}, but only ${state.resources.energy} is available.`;
+          saveState();
+          render();
+          return;
+        }
+
+        const gain = resourceKey === 'minerals' ? 18 : resourceKey === 'silicon' ? 15 : resourceKey === 'rare' ? 10 : 16;
+        state.resources[resourceKey] = clamp(state.resources[resourceKey] + gain);
+        state.resources.energy = clamp(state.resources.energy - cost);
+        state.systemMessage = `Mining operation successful. ${resourceKey.toUpperCase()} yield increased, with ${cost} energy consumed.`;
+        saveState();
+        render();
+      }
+
+      function buildStructure(structureId) {
+        const structure = buildingCatalog.find((item) => item.id === structureId);
+        if (!structure) return;
+
+        const enough = Object.entries(structure.cost).every(([key, value]) => (state.resources[key] ?? 0) >= value);
+        if (!enough) {
+          state.systemMessage = `Construction failed: insufficient materials for ${structure.name}. Review the inventory and resource balance.`;
+          saveState();
+          render();
+          return;
+        }
+
+        Object.entries(structure.cost).forEach(([key, value]) => {
+          state.resources[key] = clamp(state.resources[key] - value);
+        });
+        state.buildings = [...new Set([...state.buildings, structureId])];
+        state.colonyStats.populationCapacity += structure.effect.population || 0;
+        state.colonyStats.colonyHealth = clamp(state.colonyStats.colonyHealth + (structure.effect.health || 0));
+        state.colonyStats.sustainability = clamp(state.colonyStats.sustainability + (structure.effect.sustainability || 0), 0, 100);
+        state.systemMessage = `${structure.name} was constructed successfully. Colony capacity and resilience improve.`;
+        saveState();
+        render();
+      }
+
+      function advanceTurn(turnCount = 1) {
+        for (let i = 0; i < turnCount; i += 1) {
+        const nextResources = { ...state.resources };
+        const populationUse = Math.max(4, state.colonyStats.population / 2);
+        nextResources.food = clamp(nextResources.food - populationUse, 0, 200);
+        nextResources.water = clamp(nextResources.water - populationUse * 0.8, 0, 200);
+        nextResources.energy = clamp(nextResources.energy - 6 + (state.buildings.includes('power') ? 10 : 0), 0, 200);
+        nextResources.minerals = clamp(nextResources.minerals + (state.buildings.includes('mine') ? 8 : 2), 0, 200);
+
+        const colonyHealth = clamp(
+          state.colonyStats.colonyHealth - (nextResources.food <= 15 ? 8 : 0) - (nextResources.water <= 20 ? 7 : 0) + (state.buildings.includes('medical') ? 6 : 0),
+          0,
+          100
+        );
+        const sustainability = clamp(
+          state.colonyStats.sustainability + (nextResources.energy > 25 ? 3 : -3) + (state.buildings.includes('lab') ? 2 : 0),
+          0,
+          100
+        );
+        const nextThreat = sustainability < 50 ? 'Critical' : sustainability < 70 ? 'Elevated' : 'Stable';
+        const eventRoll = ['Solar flare watch', 'Tidal nutrient bloom', 'Dust storm disruption', 'Rare mineral veins discovered'];
+        const pickedEvent = eventRoll[Math.floor(Math.random() * eventRoll.length)];
+
+        state.resources = nextResources;
+        state.turn += 1;
+        state.eventLog = [{ label: `Turn ${state.turn}`, detail: pickedEvent }, ...state.eventLog].slice(0, 5);
+        state.recentAlerts = [pickedEvent, ...state.recentAlerts].slice(0, 5);
+        state.colonyStats.colonyHealth = colonyHealth;
+        state.colonyStats.sustainability = sustainability;
+        state.colonyStats.threat = nextThreat;
+        state.colonyStats.population = Math.min(state.colonyStats.population + 1, state.colonyStats.populationCapacity);
+        state.systemMessage = `Turn advanced successfully. Colony stability is ${sustainability}/100. ${pickedEvent}.`;
+        }
+        saveState();
+        render();
+      }
+
+      function dispatchCargo() {
+        if (!state.tradeRoutes.length) {
+          state.systemMessage = 'No active trade channels available to dispatch cargo.';
+          saveState();
+          render();
+          return;
+        }
+
+        const route = state.tradeRoutes[0];
+        state.tradeRoutes = state.tradeRoutes.slice(1);
+        state.resources.water = clamp(state.resources.water + 8);
+        state.resources.minerals = clamp(state.resources.minerals + 10);
+        state.resources.food = clamp(state.resources.food + 6);
+        state.systemMessage = `Cargo delivered to ${route.to}. Supply chain stable and route efficiency improved.`;
+        saveState();
+        render();
+      }
+
+      document.addEventListener('click', (event) => {
+        const planetButton = event.target.closest('[data-planet]');
+        if (planetButton) {
+          state.selectedPlanetId = planetButton.getAttribute('data-planet');
+          saveState();
+          render();
+          return;
+        }
+
+        const action = event.target.closest('[data-action]');
+        if (action) {
+          const value = action.getAttribute('data-action');
+          if (value === 'explore') startMission('explore');
+          if (value === 'mine') startMission('mine');
+          if (value === 'advance-turn') advanceTurn();
+          if (value === 'advance-five') advanceTurn(5);
+          if (value === 'dispatch') dispatchCargo();
+          if (value === 'calibrate') {
+            state.systemMessage = `Telemetry calibrated for ${getSelectedPlanet().name}. Planetary readings are current.`;
+            saveState();
+            render();
+          }
+          if (value === 'emergency') advanceTurn(5);
+          return;
+        }
+
+        const mineButton = event.target.closest('[data-mine]');
+        if (mineButton) {
+          mineResource(mineButton.getAttribute('data-mine'));
+          return;
+        }
+
+        const buildButton = event.target.closest('[data-build]');
+        if (buildButton) {
+          buildStructure(buildButton.getAttribute('data-build'));
+        }
+      });
+
+      render();
+    </script>
+  </body>
+</html>
